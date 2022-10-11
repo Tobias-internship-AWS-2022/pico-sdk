@@ -227,7 +227,7 @@ extern "C" {
 
 #define __packed_aligned __packed __aligned(4)
 
-#ifdef VERIFAST_PROOF
+#ifdef VERIFAST
     /* Reason for rewrite:
      * VeriFast cannot handle defines for `__force_inline`.
      */
@@ -245,7 +245,7 @@ extern "C" {
     #else
     #define __force_inline __always_inline
     #endif
-#endif /* VERIFAST_PROOF */
+#endif /* VERIFAST */
 
 /*! \brief Macro to determine the number of elements in an array
  *  \ingroup pico_platform
@@ -287,7 +287,7 @@ static inline void __breakpoint(void) {
  * The compiler will not move the load from `some_other_memory_location` above the memory barrier (which it otherwise
  * might - even above the memory store!)
  */
-#ifdef VERIFAST_PROOF
+#ifdef VERIFAST
     /* Reason for rewrite: VeriFast cannot parse:
      * - `__force_inline`
      * - the function body
@@ -316,7 +316,7 @@ static inline void __breakpoint(void) {
  *  \ingroup pico_platform
  *  \see panic
  */
-#ifdef VERIFAST_PROOF
+#ifdef VERIFAST
     /* Reason for rewrite: VeriFast cannot parse `__attribute__((noreturn))`. */
     void panic_unsupported(void);
 #else
@@ -332,7 +332,7 @@ static inline void __breakpoint(void) {
  * @param fmt format string (printf-like)
  * @param ...  printf-like arguments
  */
-#ifdef VERIFAST_PROOF
+#ifdef VERIFAST
     /* Reason for rewrite: VeriFast cannot parse `__attribute__((noreturn))`. */
     void panic(const char *fmt, ...);
 #else
@@ -361,7 +361,7 @@ uint8_t rp2040_chip_version(void);
  * @return the RP2040 rom version number (1 for RP2040-B0, 2 for RP2040-B1, 3 for RP2040-B2)
  */
 static inline uint8_t rp2040_rom_version(void) {
-    #ifdef VERIFAST_PROOF
+    #ifdef VERIFAST
         /* Reason for rewrite: VeriFast cannot parse GCC pragmas */
             return *(uint8_t*)0x13;
     #else
@@ -369,7 +369,7 @@ static inline uint8_t rp2040_rom_version(void) {
         #pragma GCC diagnostic ignored "-Warray-bounds"
             return *(uint8_t*)0x13;
         #pragma GCC diagnostic pop
-    #endif /* VERIFAST_PROOF */
+    #endif /* VERIFAST */
 }
 
 /*! \brief No-op function for the body of tight loops
@@ -379,12 +379,12 @@ static inline uint8_t rp2040_rom_version(void) {
  * makes it much easier to find tight loops, but also in the future \#ifdef-ed support for lockup
  * debugging might be added
  */
-#ifdef VERIFAST_PROOF
+#ifdef VERIFAST
     /* Reason for rewrite: VeriFast cannot parse `__force_inline`. */
     static void tight_loop_contents(void) {}
 #else
     static __force_inline void tight_loop_contents(void) {}
-#endif /* VERIFAST_PROOF */
+#endif /* VERIFAST */
 
 
 /*! \brief Multiply two integers using an assembly `MUL` instruction
@@ -397,7 +397,7 @@ static inline uint8_t rp2040_rom_version(void) {
  * \param b the second operand
  * \return a * b
  */
-#ifdef VERIFAST_PROOF
+#ifdef VERIFAST
     /* Reason for rewrite: VeriFast cannot parse:
      * - `__force_inline`
      * - function body
@@ -408,7 +408,7 @@ static inline uint8_t rp2040_rom_version(void) {
         asm ("mul %0, %1" : "+l" (a) : "l" (b) : );
         return a;
     }
-#endif /* VERIFAST_PROOF */
+#endif /* VERIFAST */
 
 /*! \brief multiply two integer values using the fastest method possible
  *  \ingroup pico_platform
@@ -463,7 +463,7 @@ uint __get_current_exception(void);
  *
  * \param minimum_cycles the minimum number of system clock cycles to delay for
  */
-#ifdef VERIFAST_PROOF
+#ifdef VERIFAST
     /* Reason for rewrite: VeriFast cannot parse function body. */
     static inline void busy_wait_at_least_cycles(uint32_t minimum_cycles);
 #else
@@ -475,19 +475,19 @@ uint __get_current_exception(void);
             : "+r" (minimum_cycles) : : "memory"
         );
     }
-#endif /* VERIFAST_PROOF */
+#endif /* VERIFAST */
 
 /*! \brief Get the current core number
  *  \ingroup pico_platform
  *
  * \return The core number the call was made from
  */
-#ifdef VERIFAST_PROOF
+#ifdef VERIFAST
     /* Reason for rewrite: VeriFast cannot parse `__force_inline`. */
     static uint get_core_num(void)
 #else
     __force_inline static uint get_core_num(void)
-#endif /* VERIFAST_PROOF */
+#endif /* VERIFAST */
 {
     return (*(uint32_t *) (SIO_BASE + SIO_CPUID_OFFSET));
 }
