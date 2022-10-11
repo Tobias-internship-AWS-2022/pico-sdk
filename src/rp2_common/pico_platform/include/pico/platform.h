@@ -227,19 +227,25 @@ extern "C" {
 
 #define __packed_aligned __packed __aligned(4)
 
-/*! \brief Attribute to force inlining of a function regardless of optimization level
- *  \ingroup pico_platform
- *
- *  For example my_function here will always be inlined:
- *
- *      int __force_inline my_function(int x) {
- *
- */
-#if defined(__GNUC__) && (__GNUC__ <= 6 || (__GNUC__ == 7 && (__GNUC_MINOR__ < 3 || !defined(__cplusplus))))
-#define __force_inline inline __always_inline
+#ifdef VERIFAST_PROOF
+    /* Reason for rewrite:
+     * VeriFast cannot handle defines for `__force_inline`.
+     */
 #else
-#define __force_inline __always_inline
-#endif
+    /*! \brief Attribute to force inlining of a function regardless of optimization level
+    *  \ingroup pico_platform
+    *
+    *  For example my_function here will always be inlined:
+    *
+    *      int __force_inline my_function(int x) {
+    *
+    */
+    #if defined(__GNUC__) && (__GNUC__ <= 6 || (__GNUC__ == 7 && (__GNUC_MINOR__ < 3 || !defined(__cplusplus))))
+    #define __force_inline inline __always_inline
+    #else
+    #define __force_inline __always_inline
+    #endif
+#endif /* VERIFAST_PROOF */
 
 /*! \brief Macro to determine the number of elements in an array
  *  \ingroup pico_platform
@@ -281,9 +287,18 @@ static inline void __breakpoint(void) {
  * The compiler will not move the load from `some_other_memory_location` above the memory barrier (which it otherwise
  * might - even above the memory store!)
  */
-__force_inline static void __compiler_memory_barrier(void) {
-    __asm__ volatile ("" : : : "memory");
-}
+#ifdef VERIFAST_PROOF
+    /* Reason for rewrite: VeriFast cannot parse:
+     * - `__force_inline`
+     * - the function body
+     */
+    static void __compiler_memory_barrier(void);
+#else
+    __force_inline static void __compiler_memory_barrier(void) {
+        __asm__ 	volatile ("" : : : "memory");
+    }
+#endif
+
 
 /*! \brief Macro for converting memory addresses to 32 bit addresses suitable for DMA
  *  \ingroup pico_platform
@@ -301,7 +316,12 @@ __force_inline static void __compiler_memory_barrier(void) {
  *  \ingroup pico_platform
  *  \see panic
  */
-void __attribute__((noreturn)) panic_unsupported(void);
+#ifdef VERIFAST_PROOF
+    /* Reason for rewrite: VeriFast cannot parse `__attribute__((noreturn))`. */
+    void panic_unsupported(void);
+#else
+    void __attribute__((noreturn)) panic_unsupported(void);
+#endif
 
 /*! \brief Displays a panic message and halts execution
  *  \ingroup pico_platform
@@ -312,7 +332,12 @@ void __attribute__((noreturn)) panic_unsupported(void);
  * @param fmt format string (printf-like)
  * @param ...  printf-like arguments
  */
-void __attribute__((noreturn)) panic(const char *fmt, ...);
+#ifdef VERIFAST_PROOF
+    /* Reason for rewrite: VeriFast cannot parse `__attribute__((noreturn))`. */
+    void panic(const char *fmt, ...);
+#else
+    void __attribute__((noreturn)) panic(const char *fmt, ...);
+#endif
 
 // PICO_CONFIG: PICO_NO_FPGA_CHECK, Remove the FPGA platform check for small code size reduction, type=bool, default=0, advanced=true, group=pico_runtime
 #ifndef PICO_NO_FPGA_CHECK
@@ -336,10 +361,15 @@ uint8_t rp2040_chip_version(void);
  * @return the RP2040 rom version number (1 for RP2040-B0, 2 for RP2040-B1, 3 for RP2040-B2)
  */
 static inline uint8_t rp2040_rom_version(void) {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Warray-bounds"
-    return *(uint8_t*)0x13;
-#pragma GCC diagnostic pop
+    #ifdef VERIFAST_PROOF
+        /* Reason for rewrite: VeriFast cannot parse GCC pragmas */
+            return *(uint8_t*)0x13;
+    #else
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Warray-bounds"
+            return *(uint8_t*)0x13;
+        #pragma GCC diagnostic pop
+    #endif /* VERIFAST_PROOF */
 }
 
 /*! \brief No-op function for the body of tight loops
@@ -349,7 +379,13 @@ static inline uint8_t rp2040_rom_version(void) {
  * makes it much easier to find tight loops, but also in the future \#ifdef-ed support for lockup
  * debugging might be added
  */
-static __force_inline void tight_loop_contents(void) {}
+#ifdef VERIFAST_PROOF
+    /* Reason for rewrite: VeriFast cannot parse `__force_inline`. */
+    static void tight_loop_contents(void) {}
+#else
+    static __force_inline void tight_loop_contents(void) {}
+#endif /* VERIFAST_PROOF */
+
 
 /*! \brief Multiply two integers using an assembly `MUL` instruction
  *  \ingroup pico_platform
@@ -361,10 +397,18 @@ static __force_inline void tight_loop_contents(void) {}
  * \param b the second operand
  * \return a * b
  */
-__force_inline static int32_t __mul_instruction(int32_t a, int32_t b) {
-    asm ("mul %0, %1" : "+l" (a) : "l" (b) : );
-    return a;
-}
+#ifdef VERIFAST_PROOF
+    /* Reason for rewrite: VeriFast cannot parse:
+     * - `__force_inline`
+     * - function body
+     */
+    static int32_t __mul_instruction(int32_t a, int32_t b);
+#else
+    __force_inline static int32_t __mul_instruction(int32_t a, int32_t b) {
+        asm ("mul %0, %1" : "+l" (a) : "l" (b) : );
+        return a;
+    }
+#endif /* VERIFAST_PROOF */
 
 /*! \brief multiply two integer values using the fastest method possible
  *  \ingroup pico_platform
@@ -419,21 +463,32 @@ uint __get_current_exception(void);
  *
  * \param minimum_cycles the minimum number of system clock cycles to delay for
  */
-static inline void busy_wait_at_least_cycles(uint32_t minimum_cycles) {
-    __asm volatile (
-        ".syntax unified\n"
-        "1: subs %0, #3\n"
-        "bcs 1b\n"
-        : "+r" (minimum_cycles) : : "memory"
-    );
-}
+#ifdef VERIFAST_PROOF
+    /* Reason for rewrite: VeriFast cannot parse function body. */
+    static inline void busy_wait_at_least_cycles(uint32_t minimum_cycles);
+#else
+    static inline void busy_wait_at_least_cycles(uint32_t minimum_cycles) {
+        __asm volatile (
+            ".syntax unified\n"
+            "1: subs %0, #3\n"
+            "bcs 1b\n"
+            : "+r" (minimum_cycles) : : "memory"
+        );
+    }
+#endif /* VERIFAST_PROOF */
 
 /*! \brief Get the current core number
  *  \ingroup pico_platform
  *
  * \return The core number the call was made from
  */
-__force_inline static uint get_core_num(void) {
+#ifdef VERIFAST_PROOF
+    /* Reason for rewrite: VeriFast cannot parse `__force_inline`. */
+    static uint get_core_num(void)
+#else
+    __force_inline static uint get_core_num(void)
+#endif /* VERIFAST_PROOF */
+{
     return (*(uint32_t *) (SIO_BASE + SIO_CPUID_OFFSET));
 }
 
