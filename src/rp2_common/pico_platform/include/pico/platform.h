@@ -229,8 +229,11 @@ extern "C" {
 
 #ifdef VERIFAST
     /* Reason for rewrite:
-     * VeriFast cannot handle defines for `__force_inline`.
+     * Verifast cannot parse ths define for and unknown reason.
+     *
+     * VF-TODO: What causes the parse error?
      */
+    #define __force_inline 
 #else
     /*! \brief Attribute to force inlining of a function regardless of optimization level
     *  \ingroup pico_platform
