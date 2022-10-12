@@ -31,14 +31,15 @@ extern "C" {
 
 #define PARAM_ASSERTIONS_ENABLED(x) ((PARAM_ASSERTIONS_ENABLED_ ## x || PARAM_ASSERTIONS_ENABLE_ALL) && !PARAM_ASSERTIONS_DISABLE_ALL)
 
-#define invalid_params_if(x, test) ({if (PARAM_ASSERTIONS_ENABLED(x)) assert(!(test));})
 #ifdef VERIFAST
     /* Reason for rewrite: 
      * Verifast cannot parse statements non-empty block statements wrapped in parentheses,
      * i.e., it can parse `{stmt;}` but not `( {stmt;} )`.
      */
+    #define invalid_params_if(x, test) {if (PARAM_ASSERTIONS_ENABLED(x)) assert(!(test));}
     #define valid_params_if(x, test) {if (PARAM_ASSERTIONS_ENABLED(x)) assert(test);}
 #else
+    #define invalid_params_if(x, test) ({if (PARAM_ASSERTIONS_ENABLED(x)) assert(!(test));})
     #define valid_params_if(x, test) ({if (PARAM_ASSERTIONS_ENABLED(x)) assert(test);})
 #endif /* VERIFAST */
 #define hard_assert_if(x, test) ({if (PARAM_ASSERTIONS_ENABLED(x)) hard_assert(!(test));})
