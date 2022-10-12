@@ -323,7 +323,16 @@ __force_inline static uint32_t spin_lock_blocking(spin_lock_t *lock) {
  *
  * \param lock Spinlock instance
  */
-inline static bool is_spin_locked(spin_lock_t *lock) {
+#ifdef VERIFAST
+    /* Reason for rewrite: 
+     * VeriFast's parser does not accept `inline` as first token in a function
+     * declaration.
+     */
+    static inline bool is_spin_locked(spin_lock_t *lock)
+#else
+    inline static bool is_spin_locked(spin_lock_t *lock)
+#endif /* VERIFAST */
+{
     check_hw_size(spin_lock_t, 4);
     uint lock_num = spin_lock_get_num(lock);
     return 0 != (*(io_ro_32 *) (SIO_BASE + SIO_SPINLOCK_ST_OFFSET) & (1u << lock_num));
