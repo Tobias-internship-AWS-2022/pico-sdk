@@ -109,9 +109,14 @@ typedef volatile uint32_t spin_lock_t;
 
  * The SEV (send event) instruction sends an event to both cores.
  */
-__force_inline static void __sev(void) {
-    __asm volatile ("sev");
-}
+#ifdef VERIFAST
+    /* Reason for rewrite: VeriFast cannot handle inline assembler. */
+    __force_inline static void __sev(void) ;
+#else
+    __force_inline static void __sev(void) {
+        __asm volatile ("sev");
+    }
+#endif /* VERIFAST */
 
 /*! \brief Insert a WFE instruction in to the code path.
  *  \ingroup hardware_sync
@@ -119,18 +124,28 @@ __force_inline static void __sev(void) {
  * The WFE (wait for event) instruction waits until one of a number of
  * events occurs, including events signalled by the SEV instruction on either core.
  */
-__force_inline static void __wfe(void) {
-    __asm volatile ("wfe");
-}
+#ifdef VERIFAST
+    /* Reason for rewrite: VeriFast cannot handle inline assembler. */
+    __force_inline static void __wfe(void) ;
+#else
+    __force_inline static void __wfe(void) {
+        __asm volatile ("wfe");
+    }
+#endif /* VERIFAST */
 
 /*! \brief Insert a WFI instruction in to the code path.
   *  \ingroup hardware_sync
 *
  * The WFI (wait for interrupt) instruction waits for a interrupt to wake up the core.
  */
-__force_inline static void __wfi(void) {
-    __asm volatile ("wfi");
-}
+#ifdef VERIFAST
+    /* Reason for rewrite: VeriFast cannot handle inline assembler. */
+    __force_inline static void __wfi(void) ;
+#else
+    __force_inline static void __wfi(void) {
+        __asm volatile ("wfi");
+    }
+#endif /* VERIFAST */
 
 /*! \brief Insert a DMB instruction in to the code path.
  *  \ingroup hardware_sync
@@ -138,9 +153,14 @@ __force_inline static void __wfi(void) {
  * The DMB (data memory barrier) acts as a memory barrier, all memory accesses prior to this
  * instruction will be observed before any explicit access after the instruction.
  */
-__force_inline static void __dmb(void) {
-    __asm volatile ("dmb" : : : "memory");
-}
+#ifdef VERIFAST
+    /* Reason for rewrite: VeriFast cannot handle inline assembler. */
+    __force_inline static void __dmb(void) ;
+#else
+    __force_inline static void __dmb(void) {
+        __asm volatile ("dmb" : : : "memory");
+    }
+#endif /* VERIFAST */
 
 /*! \brief Insert a DSB instruction in to the code path.
  *  \ingroup hardware_sync
@@ -149,9 +169,14 @@ __force_inline static void __dmb(void) {
  * memory barrier (DMB). The DSB operation completes when all explicit memory
  * accesses before this instruction complete.
  */
-__force_inline static void __dsb(void) {
-    __asm volatile ("dsb" : : : "memory");
-}
+#ifdef VERIFAST
+    /* Reason for rewrite: VeriFast cannot handle inline assembler. */
+    __force_inline static void __dsb(void) ;
+#else
+    __force_inline static void __dsb(void) {
+        __asm volatile ("dsb" : : : "memory");
+    }
+#endif /* VERIFAST */
 
 /*! \brief Insert a ISB instruction in to the code path.
  *  \ingroup hardware_sync
@@ -160,9 +185,14 @@ __force_inline static void __dsb(void) {
  * so that all instructions following the ISB are fetched from cache or memory again, after
  * the ISB instruction has been completed.
  */
-__force_inline static void __isb(void) {
-    __asm volatile ("isb");
-}
+#ifdef VERIFAST
+    /* Reason for rewrite: VeriFast cannot handle inline assembler. */
+    __force_inline static void __isb(void) ;
+#else
+    __force_inline static void __isb(void) {
+        __asm volatile ("isb");
+    }
+#endif /* VERIFAST */
 
 /*! \brief Acquire a memory fence
  *  \ingroup hardware_sync
@@ -200,21 +230,32 @@ __force_inline static void __mem_fence_release(void) {
  *
  * \return The prior interrupt enable status for restoration later via restore_interrupts()
  */
-__force_inline static uint32_t save_and_disable_interrupts(void) {
-    uint32_t status;
-    __asm volatile ("mrs %0, PRIMASK" : "=r" (status)::);
-    __asm volatile ("cpsid i");
-    return status;
-}
+#ifdef VERIFAST
+    /* Reason for rewrite: VeriFast cannot handle inline assembler. */
+    __force_inline static uint32_t save_and_disable_interrupts(void);
+#else
+    __force_inline static uint32_t save_and_disable_interrupts(void) {
+        uint32_t status;
+        __asm volatile ("mrs %0, PRIMASK" : "=r" (status)::);
+        __asm volatile ("cpsid i");
+        return status;
+    }
+#endif /* VERIFAST */
+
 
 /*! \brief Restore interrupts to a specified state
  *  \ingroup hardware_sync
  *
  * \param status Previous interrupt status from save_and_disable_interrupts()
   */
-__force_inline static void restore_interrupts(uint32_t status) {
-    __asm volatile ("msr PRIMASK,%0"::"r" (status) : );
-}
+#ifdef VERIFAST
+    /* Reason for rewrite: VeriFast cannot handle inline assembler. */
+    __force_inline static void restore_interrupts(uint32_t status) ;
+#else
+    __force_inline static void restore_interrupts(uint32_t status) {
+        __asm volatile ("msr PRIMASK,%0"::"r" (status) : );
+    }
+#endif /* VERIFAST */
 
 /*! \brief Get HW Spinlock instance from number
  *  \ingroup hardware_sync
